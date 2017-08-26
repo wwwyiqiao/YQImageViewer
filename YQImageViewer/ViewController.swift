@@ -21,10 +21,10 @@ class ViewController: UIViewController {
     }
 
     @IBAction func tappedOnButton() {
-        let imagees = [UIImage(named: "phone_bg1")!, UIImage(named: "phone_bg2")!, UIImage(named: "phone_bg3")!]
-        let imageViewer = YQImageViewer(images: imagees)
-        
-        self.present(imageViewer, animated: false, completion: nil)
+        let images = [UIImage(named: "phone_bg1")!, UIImage(named: "phone_bg2")!, UIImage(named: "phone_bg3")!]
+        let imageViewer = YQImageViewer(images: images)
+        let navi = UINavigationController(rootViewController: imageViewer)
+        self.present(navi, animated: true, completion: nil)
     }
 
 }

@@ -10,7 +10,7 @@ import UIKit
 
 class YQImageViewerCell: UICollectionViewCell, UIScrollViewDelegate, YQDetectingTapImageViewDelegate {
     
-    //views
+    // MARK: -  Views
     
     private lazy var zoomingScrollView: UIScrollView = {
         let scrollView = UIScrollView(frame: CGRect(x: 10, y: 0, width: self.bounds.width - 20, height: self.bounds.height))
@@ -29,6 +29,12 @@ class YQImageViewerCell: UICollectionViewCell, UIScrollViewDelegate, YQDetecting
         return imageView
     }()
     
+    // MARK: - Properties
+    
+    weak var activityIndicator: UIActivityIndicatorView?
+    var singleTapAction: (() -> Swift.Void)?
+    let singleTapGesture = UITapGestureRecognizer()
+    
     // MARK: - Initialization
     
     required init?(coder aDecoder: NSCoder) {
@@ -41,11 +47,47 @@ class YQImageViewerCell: UICollectionViewCell, UIScrollViewDelegate, YQDetecting
         setupViews()
     }
     
+    deinit {
+        self.contentView.removeGestureRecognizer(singleTapGesture)
+        self.contentView.removeGestureRecognizer(dragGesture)
+    }
+    
     // MARK: - Setup
     
     private func setupViews() {
+        
+        singleTapGesture.numberOfTapsRequired = 1
+        singleTapGesture.addTarget(self, action: #selector(singleTapGestureAction))
+        self.contentView.isUserInteractionEnabled = true
+        self.contentView.addGestureRecognizer(singleTapGesture)
+        
+        
+        
         self.contentView.addSubview(zoomingScrollView)
         zoomingScrollView.addSubview(imageView)
+    }
+    
+    // MARK: - Public
+    
+    func showActivityIndicator() {
+        if self.activityIndicator == nil {
+            let activityView = UIActivityIndicatorView(activityIndicatorStyle: .whiteLarge)
+            activityView.center = self.center
+            self.addSubview(activityView)
+            self.activityIndicator = activityView
+        }
+        
+        if !self.activityIndicator!.isAnimating {
+            self.activityIndicator!.startAnimating()
+        }
+    }
+    
+    func hideActivityIndicator() {
+        if self.activityIndicator != nil {
+            self.activityIndicator?.stopAnimating()
+            self.activityIndicator?.removeFromSuperview()
+            self.activityIndicator = nil
+        }
     }
     
     // MARK: - Layout
@@ -159,6 +201,12 @@ class YQImageViewerCell: UICollectionViewCell, UIScrollViewDelegate, YQDetecting
         setNeedsLayout()
     }
     
+    // MARK: - User Interaction
+    
+    @objc private func singleTapGestureAction() {
+        singleTapAction?()
+    }
+    
     // MARK: UIScrollViewDelegate
     
     func viewForZooming(in scrollView: UIScrollView) -> UIView? {
@@ -176,12 +224,7 @@ class YQImageViewerCell: UICollectionViewCell, UIScrollViewDelegate, YQDetecting
     
     // MARK: - YQPreviewImageViewDelegate
     
-    func imageView(_ imageView: YQDetectingTapImageView, singleTapDetected touch: UITouch) {
-        print("single tap")
-    }
-    
-    func imageView(_ imageView: YQDetectingTapImageView, doubleTapDetected touch: UITouch) {
-        let touchPoint = touch.location(in: imageView)
+    func imageViewDoubleTapped(_ imageView: YQDetectingTapImageView, in location: CGPoint) {
         
         if zoomingScrollView.zoomScale != zoomingScrollView.minimumZoomScale
             && zoomingScrollView.zoomScale != initialZoomScaleWithMinScale() {
@@ -190,7 +233,11 @@ class YQImageViewerCell: UICollectionViewCell, UIScrollViewDelegate, YQDetecting
             let newZoomScale = (zoomingScrollView.maximumZoomScale + zoomingScrollView.minimumZoomScale) / 2
             let xsize = zoomingScrollView.bounds.width / newZoomScale
             let ysize = zoomingScrollView.bounds.height / newZoomScale
-            zoomingScrollView.zoom(to: CGRect(x: touchPoint.x - xsize/2, y: touchPoint.y - ysize/2, width: xsize, height: ysize), animated: true)
+            zoomingScrollView.zoom(to: CGRect(x: location.x - xsize/2, y: location.y - ysize/2, width: xsize, height: ysize), animated: true)
         }
+    }
+    
+    func imageViewSingleTapped(_ imageView: YQDetectingTapImageView, in location: CGPoint) {
+        singleTapAction?()
     }
 }

@@ -39,11 +39,22 @@ class YQImageViewer: UIViewController, UICollectionViewDelegateFlowLayout, UICol
     
     //data
     let images: [UIImage]
+    let startPage: Int
     
-    init(images: [UIImage]) {
+    init(images: [UIImage], startPage: Int) {
         self.images = images
-        
+
+        if startPage < images.count && startPage >= 0 {
+            self.startPage = startPage
+        } else {
+            self.startPage = 0
+        }
+
         super.init(nibName: nil, bundle: nil)
+    }
+    
+    convenience init(images: [UIImage]) {
+        self.init(images: images, startPage: 0)
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -54,8 +65,14 @@ class YQImageViewer: UIViewController, UICollectionViewDelegateFlowLayout, UICol
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        
         setupViews()
+        
+        if !self.images.isEmpty {
+            let indexPath = IndexPath(item: startPage, section: 0)
+            collectionView.scrollToItem(at: indexPath, at: .centeredHorizontally, animated: false)
+            didScrollToPage(startPage + 1)
+        }
     }
     
     // MARK: - Setup
@@ -65,8 +82,6 @@ class YQImageViewer: UIViewController, UICollectionViewDelegateFlowLayout, UICol
         
         collectionView.frame = CGRect(x: -10, y: 0, width: self.view.bounds.width + 20, height: self.view.bounds.height)
         pageLabel.frame = CGRect(x: 0, y: 44, width: self.view.bounds.width, height: 21)
-        
-        didScrollToPage(1)
         
         self.view.addSubview(collectionView)
         self.view.addSubview(pageLabel)
@@ -85,6 +100,11 @@ class YQImageViewer: UIViewController, UICollectionViewDelegateFlowLayout, UICol
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: YQImageViewer.cellIdentifier, for: indexPath) as! YQImageViewerCell
         
         cell.displayImage(images[indexPath.row])
+        cell.singleTapAction = { [weak self] in
+            if let isHidden = self?.navigationController?.navigationBar.isHidden {
+                self?.navigationController?.setNavigationBarHidden(!isHidden, animated: true)
+            }
+        }
         
         return cell
     }
